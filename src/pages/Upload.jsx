@@ -8,6 +8,7 @@ export default function Upload() {
   const [status, setStatus] = useState('idle'); // idle | loading | success | error
   const [errorMessage, setErrorMessage] = useState('');
   const [resultData, setResultData] = useState(null);
+  const [metadata, setMetadata] = useState(null); // Menyimpan ODC dan Tanggal
   const inputRef = useRef(null);
 
   const handleFileSelect = (e) => {
@@ -26,19 +27,23 @@ export default function Upload() {
   const handleUpload = async () => {
     if (!selectedFile) return;
     setStatus('loading');
+    setErrorMessage('');
     
     try {
       const response = await uploadOtdrFile(selectedFile);
-      setResultData(response.data);
+      // Memisahkan metadata dan rows agar tabel tidak crash (Bug 1 Fixed)
+      setMetadata({ odc: response.data.odc, date: response.data.date });
+      setResultData(response.data.rows); 
       setStatus('success');
     } catch (error) {
       setStatus('error');
-      setErrorMessage(error);
+      // Penanganan error yang lebih aman (Bug 2 Fixed)
+      setErrorMessage(typeof error === 'string' ? error : error.message || 'Terjadi kesalahan yang tidak diketahui.');
     }
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-8 max-w-5xl mx-auto">
       <h2 className="text-2xl font-bold text-gray-800">Upload Data OTDR</h2>
       <p className="text-gray-500 mt-2 mb-8">Unggah file .xlsx mentah untuk dikonversi menjadi laporan redaman jaringan.</p>
 
@@ -97,16 +102,56 @@ export default function Upload() {
         </div>
       )}
 
-      {/* Tampilan Sukses */}
+      {/* Tampilan Sukses dengan Tabel */}
       {status === 'success' && resultData && (
-        <div className="mt-8 p-6 bg-green-50 border border-green-200 rounded-xl">
-          <div className="flex items-center gap-3 text-green-700 mb-4">
-            <CheckCircle size={24} />
-            <h3 className="text-lg font-bold">Kalkulasi Berhasil!</h3>
+        <div className="mt-8 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-200 bg-green-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 text-green-700">
+              <CheckCircle size={24} />
+              <div>
+                <h3 className="text-lg font-bold">Kalkulasi Selesai!</h3>
+                {metadata && <p className="text-sm text-green-600">ST0: {metadata.odc} | Tanggal: {metadata.date}</p>}
+              </div>
+            </div>
+            <Button className="bg-green-600 hover:bg-green-700 text-sm py-1.5 whitespace-nowrap">
+              Simpan Laporan
+            </Button>
           </div>
-          <pre className="bg-white p-4 rounded text-sm text-gray-600 overflow-x-auto shadow-inner">
-            {JSON.stringify(resultData, null, 2)}
-          </pre>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left text-gray-600">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
+                <tr>
+                  <th className="px-6 py-4 font-semibold">Nama File</th>
+                  <th className="px-6 py-4 font-semibold">Fiber</th>
+                  <th className="px-6 py-4 font-semibold text-center">Titik Putus</th>
+                  <th className="px-6 py-4 font-semibold text-center">Jml Bending</th>
+                  <th className="px-6 py-4 font-semibold">Loss (dB)</th>
+                  <th className="px-6 py-4 font-semibold">Estimasi RX ONU</th>
+                  <th className="px-6 py-4 font-semibold">Redaman/Core</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {resultData.map((row, index) => (
+                  <tr key={index} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{row.filename}</td>
+                    <td className="px-6 py-4">{row.fiber || '-'}</td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${row.events.includes('end') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                        {row.events.includes('end') ? '1' : '0'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {row.events.filter(e => typeof e === 'number').length}
+                    </td>
+                    <td className="px-6 py-4">{row.loss_db}</td>
+                    <td className="px-6 py-4 font-medium text-gray-800">{row.estimasi_rx_onu} dBm</td>
+                    <td className="px-6 py-4">{row.redaman_core} dB</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
