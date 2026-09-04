@@ -24,4 +24,13 @@ export const uploadOtdrFile = async (file) => {
   }
 };
 
+export const getHistoryData = async () => {
+  try {
+    const response = await api.get('/history');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || 'Gagal mengambil data riwayat.';
+  }
+};
+
 export default api;
