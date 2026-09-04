@@ -9,7 +9,7 @@ export default function Upload() {
   const [errorMessage, setErrorMessage] = useState('');
   const [resultData, setResultData] = useState(null);
   const [metadata, setMetadata] = useState(null); // Menyimpan ODC dan Tanggal
-  const [downloadUrl, setDownloadUrl] = useState(null); // <-- Tambahan state untuk URL download
+  const [downloadUrl, setDownloadUrl] = useState(null);
 
   const inputRef = useRef(null);
 
@@ -33,14 +33,12 @@ export default function Upload() {
     
     try {
       const response = await uploadOtdrFile(selectedFile);
-      // Memisahkan metadata dan rows agar tabel tidak crash (Bug 1 Fixed)
       setMetadata({ odc: response.data.odc, date: response.data.date });
       setResultData(response.data.rows); 
-      setDownloadUrl(response.download_url); // <-- Simpan link file asli buatan Python
+      setDownloadUrl(response.download_url);
       setStatus('success');
     } catch (error) {
       setStatus('error');
-      // Penanganan error yang lebih aman (Bug 2 Fixed)
       setErrorMessage(typeof error === 'string' ? error : error.message || 'Terjadi kesalahan yang tidak diketahui.');
     }
   };
@@ -105,7 +103,7 @@ export default function Upload() {
         </div>
       )}
 
-      {/* Tampilan Sukses dengan Tabel */}
+      {/* Tampilan Sukses dengan Tabel - dengan max-height dan sticky header */}
       {status === 'success' && resultData && (
         <div className="mt-8 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
           <div className="p-6 border-b border-gray-200 bg-green-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -116,7 +114,6 @@ export default function Upload() {
                 {metadata && <p className="text-sm text-green-600">ST0: {metadata.odc} | Tanggal: {metadata.date}</p>}
               </div>
             </div>
-            {/* Tombol Download diganti dengan link */}
             {downloadUrl && (
               <a href={downloadUrl} download>
                 <Button className="bg-green-600 hover:bg-green-700 text-sm py-1.5 whitespace-nowrap">
@@ -126,9 +123,11 @@ export default function Upload() {
             )}
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-600">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
+          {/* MODIFIKASI: wrapper dengan batas tinggi dan scroll vertikal */}
+          <div className="max-h-[400px] overflow-y-auto overflow-x-auto border-t border-gray-100">
+            <table className="w-full text-sm text-left text-gray-600 relative">
+              {/* MODIFIKASI: thead sticky dengan shadow */}
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th className="px-6 py-4 font-semibold">Nama File</th>
                   <th className="px-6 py-4 font-semibold">Fiber</th>
@@ -139,7 +138,7 @@ export default function Upload() {
                   <th className="px-6 py-4 font-semibold">Redaman/Core</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 bg-white">
                 {resultData.map((row, index) => (
                   <tr key={index} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{row.filename}</td>
