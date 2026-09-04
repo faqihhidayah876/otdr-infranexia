@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Upload as UploadIcon, FileSpreadsheet, Loader2, CheckCircle, AlertCircle, X } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { uploadOtdrFile } from '../utils/api';
+import * as XLSX from 'xlsx';
 
 export default function Upload() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -40,6 +41,31 @@ export default function Upload() {
       // Penanganan error yang lebih aman (Bug 2 Fixed)
       setErrorMessage(typeof error === 'string' ? error : error.message || 'Terjadi kesalahan yang tidak diketahui.');
     }
+  };
+
+  // Fungsi untuk mendownload laporan sebagai Excel
+  const handleDownload = () => {
+    if (!resultData) return;
+
+    // Format data JSON agar nama kolom di Excel-nya rapi
+    const excelData = resultData.map((row) => ({
+      "Nama File": row.filename,
+      "Fiber": row.fiber || "-",
+      "Titik Putus": row.events.includes('end') ? 1 : 0,
+      "Jumlah Bending": row.events.filter(e => typeof e === 'number').length,
+      "Loss (dB)": row.loss_db,
+      "Estimasi RX ONU (dBm)": row.estimasi_rx_onu,
+      "Redaman/Core (dB)": row.redaman_core
+    }));
+
+    // Membuat buku kerja (workbook) dan lembar kerja (worksheet) baru
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan OTDR");
+
+    // Mengunduh file
+    const dateStr = metadata?.date ? metadata.date.replace(/[:/]/g, '-') : 'Terbaru';
+    XLSX.writeFile(workbook, `Laporan_OTDR_${metadata?.odc || 'Export'}_${dateStr}.xlsx`);
   };
 
   return (
@@ -113,8 +139,9 @@ export default function Upload() {
                 {metadata && <p className="text-sm text-green-600">ST0: {metadata.odc} | Tanggal: {metadata.date}</p>}
               </div>
             </div>
-            <Button className="bg-green-600 hover:bg-green-700 text-sm py-1.5 whitespace-nowrap">
-              Simpan Laporan
+            {/* Tombol Simpan Laporan sekarang memanggil handleDownload */}
+            <Button onClick={handleDownload} className="bg-green-600 hover:bg-green-700 text-sm py-1.5 whitespace-nowrap">
+              Simpan Laporan (Excel)
             </Button>
           </div>
           
