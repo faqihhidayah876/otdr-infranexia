@@ -44,7 +44,7 @@ export default function Upload() {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+   <div className="p-4 md:p-8 pt-20 md:pt-8 max-w-5xl mx-auto">
       <h2 className="text-2xl font-bold text-gray-800">Upload Data OTDR</h2>
       <p className="text-gray-500 mt-2 mb-8">Unggah file .xlsx mentah untuk dikonversi menjadi laporan redaman jaringan.</p>
 

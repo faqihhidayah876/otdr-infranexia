@@ -57,13 +57,12 @@ export default function History() {
     }
   };
 
-  return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <div className="flex items-center gap-3 mb-2">
-        <Clock className="text-red-600" size={28} />
+ return (
+    <div className="p-4 md:p-8 pt-20 md:pt-8 max-w-6xl mx-auto">
+      <div className="mb-2">
         <h2 className="text-2xl font-bold text-gray-800">Riwayat Kalkulasi</h2>
       </div>
-      <p className="text-gray-500 mb-8">Daftar riwayat file Excel yang telah diunggah dan diproses oleh sistem.</p>
+      <p className="text-gray-500 mb-8 text-sm md:text-base">Daftar riwayat file Excel yang telah diunggah dan diproses oleh sistem.</p>
 
       {loading && (
         <div className="flex flex-col items-center justify-center p-12 text-gray-500">

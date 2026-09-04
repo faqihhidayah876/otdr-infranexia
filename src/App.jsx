@@ -1,26 +1,31 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/layout/Layout';
+import { Routes, Route } from 'react-router-dom';
+import Sidebar from './components/layout/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Upload from './pages/Upload';
 import History from './pages/History';
-import Login from './pages/auth/Login';
+import FloatingChatbot from './components/FloatingChatbot';
 
-export default function App() {
+function App() {
   return (
-    <Routes>
-      {/* URL utama otomatis dilempar ke halaman Login */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="/login" element={<Login />} />
+    /* Background Gradien Halus sebagai kanvas Glassmorphism (Tanpa bungkus <Router> lagi) */
+    <div className="flex min-h-screen bg-gradient-to-br from-[#f8fafc] via-[#f1f5f9] to-[#fee2e2] font-sans text-gray-800 selection:bg-red-200">
+      
+      <Sidebar />
+      
+      <main className="flex-1 relative overflow-x-hidden">
+        <div className="h-full overflow-y-auto">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/upload" element={<Upload />} />
+            <Route path="/history" element={<History />} />
+          </Routes>
+        </div>
+      </main>
 
-      {/* Rute Terproteksi (Akan kita kunci dengan token dari Laravel nantinya) */}
-      <Route element={<Layout />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/upload" element={<Upload />} />
-        <Route path="/history" element={<History />} />
-      </Route>
-
-      {/* Tangani 404 (URL tidak dikenal), kembalikan ke Login */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
+      {/* Pasang Chatbot di luar Main Content agar menimpa seluruh elemen */}
+      <FloatingChatbot />
+    </div>
   );
 }
+
+export default App;
