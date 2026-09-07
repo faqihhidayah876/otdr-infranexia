@@ -52,9 +52,9 @@ export default function Login() {
               Input Data
             </span>
           </div>
-          <div className="flex-1 border-b-2 border-gray-200 pb-2 pl-4">
+          {/* <div className="flex-1 border-b-2 border-gray-200 pb-2 pl-4">
             <span className="text-gray-400 text-sm font-semibold">Verification</span>
-          </div>
+          </div> */}
         </div>
 
         {/* Form Container */}
