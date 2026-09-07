@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Clock, Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getHistoryData } from '../utils/api';
 
 export default function History() {
   const [historyData, setHistoryData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // State untuk Fitur Search & Pagination
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchHistory();
@@ -17,9 +22,8 @@ export default function History() {
       const response = await getHistoryData();
       const rawData = response.data || [];
 
-      // Kelompokkan data berdasarkan menit upload dan ODC
       const grouped = rawData.reduce((acc, curr) => {
-        const timeKey = curr.created_at.substring(0, 16); // YYYY-MM-DD HH:mm
+        const timeKey = curr.created_at.substring(0, 16); 
         const key = `${timeKey}_${curr.odc}`;
 
         if (!acc[key]) {
@@ -42,7 +46,6 @@ export default function History() {
         return acc;
       }, {});
 
-      // Ubah menjadi array dan hitung rata-rata RX
       const historyArray = Object.values(grouped).map(item => ({
         ...item,
         avg_rx: (item.sum_rx / item.jumlah_core).toFixed(2)
@@ -57,12 +60,52 @@ export default function History() {
     }
   };
 
- return (
-    <div className="p-4 md:p-8 pt-20 md:pt-8 max-w-6xl mx-auto">
-      <div className="mb-2">
-        <h2 className="text-2xl font-bold text-gray-800">Riwayat Kalkulasi</h2>
+  // Logika Filter Pencarian
+  const filteredData = historyData.filter(item => {
+    const searchLower = searchTerm.toLowerCase();
+    const dateStr = new Date(item.upload_time).toLocaleString('id-ID', {
+      day: '2-digit', month: 'short', year: 'numeric'
+    }).toLowerCase();
+    
+    return (
+      (item.odc && item.odc.toLowerCase().includes(searchLower)) ||
+      dateStr.includes(searchLower)
+    );
+  });
+
+  // Logika Pagination
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset ke halaman 1 jika user mengetik sesuatu di kolom pencarian
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); 
+  };
+
+  return (
+    <div className="p-4 md:p-8 pt-20 md:pt-8 max-w-6xl mx-auto animate-page">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Riwayat Kalkulasi</h2>
+          <p className="text-gray-500 mt-1 text-sm md:text-base">Daftar riwayat file Excel yang telah diproses.</p>
+        </div>
+        
+        {/* Input Pencarian */}
+        <div className="relative w-full md:w-72">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search size={18} className="text-gray-400" />
+          </div>
+          <input 
+            type="text" 
+            placeholder="Cari ODC atau Tanggal..." 
+            value={searchTerm}
+            onChange={handleSearch}
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all shadow-sm"
+          />
+        </div>
       </div>
-      <p className="text-gray-500 mb-8 text-sm md:text-base">Daftar riwayat file Excel yang telah diunggah dan diproses oleh sistem.</p>
 
       {loading && (
         <div className="flex flex-col items-center justify-center p-12 text-gray-500">
@@ -72,20 +115,20 @@ export default function History() {
       )}
 
       {error && !loading && (
-        <div className="p-4 bg-red-100 text-red-700 rounded-lg flex items-center gap-3">
+        <div className="p-4 bg-red-100 text-red-700 rounded-lg flex items-center gap-3 shadow-sm">
           <AlertCircle size={20} />
           <p className="font-medium">{error}</p>
         </div>
       )}
 
-      {!loading && !error && historyData.length === 0 && (
+      {!loading && !error && filteredData.length === 0 && (
         <div className="text-center p-12 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
-          <p className="text-gray-500">Belum ada data riwayat kalkulasi. Silakan lakukan upload terlebih dahulu.</p>
+          <p className="text-gray-500 font-medium">Data tidak ditemukan.</p>
         </div>
       )}
 
-      {!loading && !error && historyData.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+      {!loading && !error && filteredData.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left text-gray-600">
               <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
@@ -99,7 +142,7 @@ export default function History() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {historyData.map((row) => (
+                {currentData.map((row) => (
                   <tr key={row.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       {new Date(row.upload_time).toLocaleString('id-ID', {
@@ -116,13 +159,40 @@ export default function History() {
                         {row.total_putus}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center">{row.total_bending}</td>
+                    <td className="px-6 py-4 text-center font-medium">{row.total_bending}</td>
                     <td className="px-6 py-4 font-medium text-gray-800">{row.avg_rx} dBm</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
+          {/* Kontrol Pagination */}
+          <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <span className="text-sm text-gray-500">
+              Menampilkan <span className="font-medium text-gray-800">{startIndex + 1}</span> - <span className="font-medium text-gray-800">{Math.min(startIndex + itemsPerPage, filteredData.length)}</span> dari <span className="font-medium text-gray-800">{filteredData.length}</span> data
+            </span>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded-md border border-gray-200 text-gray-600 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-white shadow-sm"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <span className="text-sm font-medium text-gray-600 px-2">
+                Halaman {currentPage} dari {totalPages}
+              </span>
+              <button 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="p-1.5 rounded-md border border-gray-200 text-gray-600 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-white shadow-sm"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+
         </div>
       )}
     </div>

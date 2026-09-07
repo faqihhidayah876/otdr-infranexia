@@ -3,8 +3,6 @@ import axios from 'axios';
 // Default fallback menggunakan backend production Alwaysdata jika VITE_API_URL belum di-set di Vercel
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://theresa-2sid.alwaysdata.net/api';
 
-console.log("API Base URL saat ini:", API_BASE_URL);
-
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {

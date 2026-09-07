@@ -65,7 +65,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-4 md:p-8 pt-20 md:pt-8 max-w-7xl mx-auto">
+    <div className="p-4 md:p-8 pt-20 md:pt-8 max-w-7xl mx-auto animate-page">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800">Dashboard Utama</h2>
         <p className="text-gray-500 mt-1">Ringkasan performa jaringan fiber optik dari data OTDR.</p>
