@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Upload as UploadIcon, FileSpreadsheet, Loader2, CheckCircle, AlertCircle, X, Download } from 'lucide-react';
+import Button from '../components/ui/Button'; // Kita gunakan kembali komponen Button andalanmu!
 import { uploadOtdrFile } from '../utils/api';
 
 export default function Upload() {
@@ -9,10 +10,11 @@ export default function Upload() {
   const [resultData, setResultData] = useState(null);
   const [metadata, setMetadata] = useState(null);
   const [downloadUrl, setDownloadUrl] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [isDragging, setIsDragging] = useState(false); // State Drag & Drop
 
   const inputRef = useRef(null);
 
+  // Fungsi sentral validasi file (dipakai oleh Drag & Drop dan Klik manual)
   const validateAndSetFile = (file) => {
     if (file) {
       if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
@@ -22,17 +24,12 @@ export default function Upload() {
       setSelectedFile(file);
       setErrorMessage('');
       setStatus('idle');
-      // Reset hasil sebelumnya
-      setResultData(null);
-      setMetadata(null);
-      setDownloadUrl(null);
     }
   };
 
-  const handleFileSelect = (e) => {
-    validateAndSetFile(e.target.files[0]);
-  };
+  const handleFileSelect = (e) => validateAndSetFile(e.target.files[0]);
 
+  // --- LOGIKA DRAG AND DROP ---
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -50,44 +47,22 @@ export default function Upload() {
       validateAndSetFile(e.dataTransfer.files[0]);
     }
   };
+  // -----------------------------
 
   const handleUpload = async () => {
-    if (!selectedFile) {
-      console.warn('Tidak ada file yang dipilih');
-      return;
-    }
-
-    console.log('📤 Tombol diklik, mulai upload file:', selectedFile.name);
+    if (!selectedFile) return;
     setStatus('loading');
     setErrorMessage('');
-
+    
     try {
       const response = await uploadOtdrFile(selectedFile);
-      console.log('✅ Respons dari API:', response);
-
-      // Validasi struktur respons
-      if (!response || !response.data) {
-        throw new Error('Respons dari server tidak valid (missing data)');
-      }
-
-      const { odc, date, rows } = response.data;
-      if (!rows || !Array.isArray(rows)) {
-        throw new Error('Data rows tidak ditemukan atau bukan array');
-      }
-
-      setMetadata({ odc, date });
-      setResultData(rows);
-      setDownloadUrl(response.download_url || null);
+      setMetadata({ odc: response.data.odc, date: response.data.date });
+      setResultData(response.data.rows); 
+      setDownloadUrl(response.download_url); // Fitur download dari backend
       setStatus('success');
-      console.log('🎉 Upload sukses!');
     } catch (error) {
-      console.error('❌ Error saat upload:', error);
       setStatus('error');
-      // Ambil pesan error dengan aman
-      const msg = typeof error === 'string'
-        ? error
-        : error?.message || 'Terjadi kesalahan yang tidak diketahui.';
-      setErrorMessage(msg);
+      setErrorMessage(typeof error === 'string' ? error : error.message || 'Terjadi kesalahan yang tidak diketahui.');
     }
   };
 
@@ -96,13 +71,13 @@ export default function Upload() {
       <h2 className="text-2xl font-bold text-gray-800">Upload Data OTDR</h2>
       <p className="text-gray-500 mt-2 mb-8">Unggah file .xlsx mentah untuk dikonversi menjadi laporan redaman jaringan.</p>
 
-      {/* Area Dropzone dengan Event Drag & Drop */}
-      <div
+      {/* Area Dropzone dengan Drag & Drop */}
+      <div 
         className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-all duration-300 relative ${
-          isDragging
-            ? 'border-red-500 bg-red-50 scale-[1.02]'
-            : selectedFile
-              ? 'border-green-500 bg-green-50'
+          isDragging 
+            ? 'border-red-500 bg-red-50 scale-[1.02]' 
+            : selectedFile 
+              ? 'border-green-500 bg-green-50' 
               : 'border-gray-300 hover:border-red-400 hover:bg-red-50/50 cursor-pointer'
         }`}
         onClick={() => !selectedFile && inputRef.current?.click()}
@@ -110,10 +85,10 @@ export default function Upload() {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <input
-          type="file"
-          ref={inputRef}
-          className="hidden"
+        <input 
+          type="file" 
+          ref={inputRef} 
+          className="hidden" 
           accept=".xlsx, .xls"
           onChange={handleFileSelect}
         />
@@ -129,23 +104,19 @@ export default function Upload() {
             <p className="text-sm text-gray-400 mt-1">Atau klik untuk mencari file (Maks 10MB)</p>
           </>
         ) : (
-          <div className="flex items-center gap-4 w-full max-w-md bg-white p-4 rounded-lg shadow-sm border border-green-200 animate-in fade-in zoom-in duration-300">
+          <div className="flex items-center gap-4 w-full max-w-md bg-white p-4 rounded-lg shadow-sm border border-green-200">
             <FileSpreadsheet className="text-green-600" size={32} />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-gray-800 truncate">{selectedFile.name}</p>
               <p className="text-xs text-gray-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedFile(null);
-                setStatus('idle');
-                setResultData(null);
-                setMetadata(null);
-                setDownloadUrl(null);
-                setErrorMessage('');
-                if (inputRef.current) inputRef.current.value = '';
-              }}
+            <button 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                setSelectedFile(null); 
+                setStatus('idle'); 
+                if (inputRef.current) inputRef.current.value = ''; 
+              }} 
               className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
             >
               <X size={20} />
@@ -156,33 +127,25 @@ export default function Upload() {
 
       {/* Notifikasi Error */}
       {status === 'error' && (
-        <div className="mt-6 p-4 bg-red-100 text-red-700 rounded-lg flex items-center gap-3 animate-in slide-in-from-top-2">
+        <div className="mt-6 p-4 bg-red-100 text-red-700 rounded-lg flex items-center gap-3">
           <AlertCircle size={20} className="shrink-0" />
           <p className="font-medium">{errorMessage}</p>
         </div>
       )}
 
-      {/* Tombol Aksi */}
+      {/* Tombol Aksi (KEMBALI MENGGUNAKAN <Button> LAMA MILIKMU) */}
       {selectedFile && status !== 'success' && (
         <div className="mt-8 flex justify-end">
-          <button
-            onClick={handleUpload}
-            disabled={status === 'loading'}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all shadow-lg ${
-              status === 'loading'
-                ? 'bg-red-400 cursor-not-allowed shadow-none'
-                : 'bg-red-600 hover:bg-red-700 hover:shadow-red-600/30 hover:-translate-y-0.5 active:translate-y-0'
-            }`}
-          >
+          <Button onClick={handleUpload} disabled={status === 'loading'} className="flex items-center gap-2">
             {status === 'loading' ? <Loader2 className="animate-spin" size={20} /> : <UploadIcon size={20} />}
             {status === 'loading' ? 'Memproses Data...' : 'Mulai Kalkulasi'}
-          </button>
+          </Button>
         </div>
       )}
 
-      {/* Tampilan Sukses */}
+      {/* Tampilan Sukses (Dengan Tabel Scrollable yang Diperbagus) */}
       {status === 'success' && resultData && (
-        <div className="mt-8 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="mt-8 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
           <div className="p-6 border-b border-gray-200 bg-green-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3 text-green-700">
               <CheckCircle size={28} />
@@ -191,16 +154,21 @@ export default function Upload() {
                 {metadata && <p className="text-sm text-green-600 font-medium">ST0: {metadata.odc} | Tanggal: {metadata.date}</p>}
               </div>
             </div>
-            {downloadUrl && (
+            
+            {/* Tombol Download Laporan Excel */}
+            {downloadUrl ? (
               <a href={downloadUrl} download>
-                <button className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm whitespace-nowrap">
-                  <Download size={18} />
-                  Download Excel
-                </button>
+                <Button className="bg-green-600 hover:bg-green-700 text-sm py-1.5 whitespace-nowrap flex items-center gap-2">
+                  <Download size={16} /> Download File Excel
+                </Button>
               </a>
+            ) : (
+              <Button className="bg-green-600 hover:bg-green-700 text-sm py-1.5 whitespace-nowrap flex items-center gap-2">
+                <CheckCircle size={16} /> Laporan Tersimpan
+              </Button>
             )}
           </div>
-
+          
           <div className="max-h-[400px] overflow-y-auto overflow-x-auto border-t border-gray-100">
             <table className="w-full text-sm text-left text-gray-600 relative">
               <thead className="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0 z-10 shadow-sm">
