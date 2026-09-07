@@ -19,7 +19,8 @@ export default function Upload() {
   // Fungsi validasi file (dipakai saat diklik atau saat drag & drop)
   const validateAndSetFile = (file) => {
     if (file) {
-      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      const fileNameLower = file.name.toLowerCase();
+      if (!fileNameLower.endsWith('.xlsx') && !fileNameLower.endsWith('.xls')) {
         setErrorMessage('Hanya format Excel (.xlsx / .xls) yang diizinkan.');
         return;
       }
@@ -51,8 +52,12 @@ export default function Upload() {
   };
   // -----------------------------
 
-  const handleUpload = async () => {
-    if (!selectedFile) return;
+  const handleUpload = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!selectedFile) {
+      setErrorMessage('Silakan pilih file Excel terlebih dahulu.');
+      return;
+    }
     
     setStatus('loading');
     setErrorMessage('');
@@ -62,12 +67,13 @@ export default function Upload() {
       const response = await uploadOtdrFile(selectedFile);
       console.log("Respon asli dari server:", response);
       
-      // PERBAIKAN FATAL: Membaca struktur respons dengan aman
-      // Jika di api.js sudah mereturn 'response.data', maka variabel 'response' di sini ADALAH datanya
+      // Membaca struktur respons dengan aman
       const payload = response.data ? response.data : response;
 
-      // Cek apakah data baris (rows) benar-benar ada
-      if (!payload || !payload.rows) {
+      // Cek apakah data baris (rows) benar-benar ada (bisa berupa payload.rows atau payload.data atau payload berupa array)
+      const rows = payload.rows || (Array.isArray(payload.data) ? payload.data : null) || (Array.isArray(payload) ? payload : null);
+
+      if (!rows || !Array.isArray(rows)) {
         throw new Error("Gagal membaca struktur tabel dari server.");
       }
 
@@ -75,7 +81,7 @@ export default function Upload() {
         odc: payload.odc || 'ODC Tidak Diketahui', 
         date: payload.date || '-' 
       });
-      setResultData(payload.rows); 
+      setResultData(rows); 
       
       // Ambil URL download (antisipasi kalau letaknya di root atau di dalam data)
       setDownloadUrl(response.download_url || payload.download_url || null);
@@ -155,10 +161,15 @@ export default function Upload() {
         </div>
       )}
 
-      {/* Tombol Aksi (Menggunakan komponen kustom bawaanmu) */}
+      {/* Tombol Aksi */}
       {selectedFile && status !== 'success' && (
-        <div className="mt-8 flex justify-end">
-          <Button onClick={handleUpload} disabled={status === 'loading'} className="flex items-center gap-2 px-6 py-3">
+        <div className="mt-8 flex justify-end relative z-10">
+          <Button 
+            type="button"
+            onClick={handleUpload} 
+            disabled={status === 'loading'} 
+            className="flex items-center gap-2 px-6 py-3 cursor-pointer"
+          >
             {status === 'loading' ? <Loader2 className="animate-spin" size={20} /> : <UploadIcon size={20} />}
             {status === 'loading' ? 'Memproses Data...' : 'Mulai Kalkulasi'}
           </Button>

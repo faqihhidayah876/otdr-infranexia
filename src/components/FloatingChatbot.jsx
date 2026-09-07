@@ -82,12 +82,12 @@ export default function FloatingChatbot() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-6 right-6 z-50 pointer-events-none">
       <div 
         className={`mb-4 transition-all duration-300 origin-bottom-right transform ${
-          isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'
+          isOpen ? 'scale-100 opacity-100 pointer-events-auto' : 'scale-0 opacity-0 pointer-events-none invisible h-0 w-0 mb-0'
         } w-[340px] bg-white/70 backdrop-blur-xl border border-white/50 shadow-2xl rounded-2xl overflow-hidden flex flex-col`}
-        style={{ height: '480px' }}
+        style={{ height: isOpen ? '480px' : '0px' }}
       >
         <div className="bg-red-600/90 backdrop-blur-md px-4 py-3 flex justify-between items-center text-white border-b border-red-500/50 shadow-sm">
           <div className="flex items-center gap-2">
@@ -151,7 +151,7 @@ export default function FloatingChatbot() {
 
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="ml-auto flex items-center justify-center w-14 h-14 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-full shadow-lg hover:shadow-red-500/30 hover:scale-105 transition-all duration-300"
+        className="pointer-events-auto cursor-pointer ml-auto flex items-center justify-center w-14 h-14 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-full shadow-lg hover:shadow-red-500/30 hover:scale-105 transition-all duration-300"
       >
         {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
       </button>

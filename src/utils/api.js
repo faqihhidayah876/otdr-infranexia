@@ -1,8 +1,12 @@
 import axios from 'axios';
 
-// Pastikan VITE_API_URL ini sudah di-set di Vercel: https://theresa-2sid.alwaysdata.net/api
+// Default fallback menggunakan backend production Alwaysdata jika VITE_API_URL belum di-set di Vercel
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://theresa-2sid.alwaysdata.net/api';
+
+console.log("API Base URL saat ini:", API_BASE_URL);
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: API_BASE_URL,
   headers: {
     'Accept': 'application/json',
   },
@@ -13,14 +17,17 @@ export const uploadOtdrFile = async (file) => {
   formData.append('file', file);
 
   try {
-    const response = await api.post('/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Biarkan Axios mengatur header Content-Type beserta boundary multipart secara otomatis
+    const response = await api.post('/upload', formData);
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Terjadi kesalahan saat menghubungi server.';
+    console.error("Detail uploadOtdrFile error:", error);
+    const serverMessage = 
+      error.response?.data?.errors?.file?.[0] || 
+      error.response?.data?.message || 
+      error.message || 
+      'Terjadi kesalahan saat menghubungi server.';
+    throw serverMessage;
   }
 };
 
@@ -29,7 +36,9 @@ export const getHistoryData = async () => {
     const response = await api.get('/history');
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Gagal mengambil data riwayat.';
+    console.error("Detail getHistoryData error:", error);
+    const serverMessage = error.response?.data?.message || error.message || 'Gagal mengambil data riwayat.';
+    throw serverMessage;
   }
 };
 
