@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Globe, Moon, Sun, Info, Shield, FileText, Check } from 'lucide-react';
 
 export default function Settings() {
-  // State untuk pengaturan
   const [language, setLanguage] = useState('id');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [savedMessage, setSavedMessage] = useState(false);
@@ -13,25 +12,22 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-4 md:p-8 pt-20 md:pt-8 max-w-4xl mx-auto animate-page">
-      <div className="mb-6">
+    <div className="animate-page space-y-6">
+      <div>
         <h2 className="text-2xl font-bold text-gray-800">Pengaturan Sistem</h2>
         <p className="text-gray-500 mt-1 text-sm md:text-base">Kelola preferensi bahasa, tampilan, dan informasi sistem Infranexia OTDR.</p>
       </div>
 
       {savedMessage && (
-        <div className="mb-6 p-4 bg-green-100 text-green-700 rounded-xl flex items-center gap-2 text-sm font-medium animate-in fade-in">
+        <div className="p-4 bg-green-100 text-green-700 rounded-xl flex items-center gap-2 text-sm font-medium animate-in fade-in">
           <Check size={18} /> Pengaturan berhasil disimpan!
         </div>
       )}
 
       <div className="space-y-6">
-        
-        {/* Preferensi Tampilan & Bahasa */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
           <h3 className="text-lg font-bold text-gray-800 border-b pb-3">Preferensi Umum</h3>
           
-          {/* Bahasa */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -52,7 +48,6 @@ export default function Settings() {
             </select>
           </div>
 
-          {/* Mode Terang / Gelap */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-gray-100">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
@@ -74,11 +69,9 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Informasi Sistem & Legal */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
           <h3 className="text-lg font-bold text-gray-800 border-b pb-3">Sistem & Legalitas</h3>
 
-          {/* Versi Sistem */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center">
@@ -92,7 +85,6 @@ export default function Settings() {
             <span className="text-sm font-bold text-gray-700 bg-gray-100 px-3 py-1 rounded-lg">v2.1.1-enterprise</span>
           </div>
 
-          {/* Kebijakan Privasi */}
           <div className="flex items-center justify-between pt-4 border-t border-gray-100">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">
@@ -106,7 +98,6 @@ export default function Settings() {
             <button className="text-sm font-semibold text-red-600 hover:underline">Lihat Detail</button>
           </div>
 
-          {/* Syarat & Ketentuan */}
           <div className="flex items-center justify-between pt-4 border-t border-gray-100">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
@@ -121,7 +112,6 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Tombol Simpan */}
         <div className="flex justify-end">
           <button 
             onClick={handleSave}
@@ -130,7 +120,6 @@ export default function Settings() {
             Simpan Perubahan
           </button>
         </div>
-
       </div>
     </div>
   );

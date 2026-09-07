@@ -6,8 +6,6 @@ export default function History() {
   const [historyData, setHistoryData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
-  // State untuk Fitur Search & Pagination
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -60,39 +58,34 @@ export default function History() {
     }
   };
 
-  // Logika Filter Pencarian
   const filteredData = historyData.filter(item => {
     const searchLower = searchTerm.toLowerCase();
     const dateStr = new Date(item.upload_time).toLocaleString('id-ID', {
       day: '2-digit', month: 'short', year: 'numeric'
     }).toLowerCase();
-    
     return (
       (item.odc && item.odc.toLowerCase().includes(searchLower)) ||
       dateStr.includes(searchLower)
     );
   });
 
-  // Logika Pagination
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
-  // Reset ke halaman 1 jika user mengetik sesuatu di kolom pencarian
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1); 
   };
 
   return (
-    <div className="p-4 md:p-8 pt-20 md:pt-8 max-w-6xl mx-auto animate-page">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+    <div className="animate-page space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Riwayat Kalkulasi</h2>
           <p className="text-gray-500 mt-1 text-sm md:text-base">Daftar riwayat file Excel yang telah diproses.</p>
         </div>
         
-        {/* Input Pencarian */}
         <div className="relative w-full md:w-72">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search size={18} className="text-gray-400" />
@@ -167,7 +160,6 @@ export default function History() {
             </table>
           </div>
 
-          {/* Kontrol Pagination */}
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
             <span className="text-sm text-gray-500">
               Menampilkan <span className="font-medium text-gray-800">{startIndex + 1}</span> - <span className="font-medium text-gray-800">{Math.min(startIndex + itemsPerPage, filteredData.length)}</span> dari <span className="font-medium text-gray-800">{filteredData.length}</span> data
@@ -192,7 +184,6 @@ export default function History() {
               </button>
             </div>
           </div>
-
         </div>
       )}
     </div>

@@ -37,9 +37,9 @@ export default function Sidebar() {
       {/* Tombol Hamburger untuk Mobile */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-[60] p-2 bg-white/90 backdrop-blur-md rounded-lg shadow-sm border border-gray-200 text-red-600"
+        className="md:hidden fixed top-3.5 left-3 z-[60] w-9 h-9 flex items-center justify-center bg-white/90 backdrop-blur-md border border-gray-200 rounded-full text-gray-700 shadow-sm hover:text-red-600 transition-colors"
       >
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
+        {isOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
       {/* Overlay Gelap */}

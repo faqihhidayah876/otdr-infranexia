@@ -28,7 +28,7 @@ export default function Upload() {
       setSelectedFile(file);
       setErrorMessage('');
       setStatus('idle');
-      setResultData(null); // Reset hasil tabel jika file baru dipilih
+      setResultData(null);
       setSearchTerm('');
       setCurrentPage(1);
     }
@@ -71,14 +71,14 @@ export default function Upload() {
       setDownloadUrl(response.download_url || payload.download_url || null);
       
       setStatus('success');
-      setCurrentPage(1); // Reset page saat hasil baru muncul
+      setCurrentPage(1);
     } catch (error) {
       setStatus('error');
       setErrorMessage(typeof error === 'string' ? error : error.message || 'Gagal menghubungi server. Periksa koneksi atau URL API.');
     }
   };
 
-  // Logika Filter & Pencarian untuk Tabel Hasil
+  // Logika Filter & Pencarian
   const filteredResult = resultData?.filter(item => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -87,7 +87,6 @@ export default function Upload() {
     );
   }) || [];
 
-  // Logika Pagination untuk Tabel Hasil
   const totalPages = Math.ceil(filteredResult.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentResult = filteredResult.slice(startIndex, startIndex + itemsPerPage);
@@ -98,57 +97,49 @@ export default function Upload() {
   };
 
   return (
-    <div className="p-4 md:p-8 pt-20 md:pt-8 max-w-5xl mx-auto relative animate-page">
-      <h2 className="text-2xl font-bold text-gray-800">Upload Data OTDR</h2>
-      <p className="text-gray-500 mt-2 mb-8">Unggah file .xlsx mentah untuk dikonversi menjadi laporan redaman jaringan.</p>
+    <div className="animate-page space-y-6">
+      <div>
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Upload Data OTDR</h2>
+        <p className="text-gray-500 mt-2 text-sm sm:text-base max-w-2xl">Unggah file .xlsx mentah untuk dikonversi secara otomatis menjadi laporan redaman jaringan berstandar perusahaan.</p>
+      </div>
 
-      {/* Area Dropzone */}
+      {/* Area Dropzone yang Lebih Premium */}
       <div 
-        className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-all duration-300 relative z-10 ${
-          isDragging ? 'border-red-500 bg-red-50 scale-[1.02]' 
-            : selectedFile ? 'border-green-500 bg-green-50' 
-            : 'border-gray-300 hover:border-red-400 hover:bg-red-50/50 cursor-pointer'
+        className={`border-2 border-dashed rounded-3xl p-8 sm:p-12 flex flex-col items-center justify-center transition-all duration-300 relative z-10 ${
+          isDragging 
+            ? 'border-red-400 bg-red-50/50 scale-[1.01]' 
+            : selectedFile 
+              ? 'border-green-400 bg-green-50/30' 
+              : 'border-gray-300 bg-gray-50/30 hover:border-red-300 hover:bg-red-50/20 cursor-pointer'
         }`}
         onClick={() => !selectedFile && inputRef.current?.click()}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <input 
-          type="file" 
-          ref={inputRef} 
-          className="hidden" 
-          accept=".xlsx, .xls"
-          onChange={handleFileSelect}
-        />
+        <input type="file" ref={inputRef} className="hidden" accept=".xlsx, .xls" onChange={handleFileSelect} />
 
         {!selectedFile ? (
           <>
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${isDragging ? 'bg-red-200 text-red-700' : 'bg-red-100 text-red-600'}`}>
-              <UploadIcon size={32} />
+            <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-5 transition-colors shadow-sm ${isDragging ? 'bg-red-100 text-red-600' : 'bg-white text-red-500 border border-gray-100'}`}>
+              <UploadIcon size={36} strokeWidth={1.5} />
             </div>
-            <p className="font-semibold text-gray-700 text-center">
-              {isDragging ? 'Lepaskan file di sini...' : 'Tarik & Lepas (Drag & Drop) file Excel ke sini'}
+            <p className="font-bold text-gray-800 text-center text-lg">
+              {isDragging ? 'Lepaskan file di sini...' : 'Tarik & Lepas file Excel'}
             </p>
-            <p className="text-sm text-gray-400 mt-1">Atau klik untuk mencari file (Maks 10MB)</p>
+            <p className="text-sm text-gray-500 mt-2 text-center">Atau klik untuk mencari file (Maks 10MB)</p>
           </>
         ) : (
-          <div className="flex items-center gap-4 w-full max-w-md bg-white p-4 rounded-lg shadow-sm border border-green-200 relative z-20">
-            <FileSpreadsheet className="text-green-600" size={32} />
+          <div className="flex items-center gap-4 w-full max-w-md bg-white p-5 rounded-2xl shadow-sm border border-green-100 relative z-20">
+            <div className="p-3 bg-green-50 rounded-xl text-green-600"><FileSpreadsheet size={28} /></div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-gray-800 truncate">{selectedFile.name}</p>
-              <p className="text-xs text-gray-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+              <p className="font-bold text-gray-900 truncate">{selectedFile.name}</p>
+              <p className="text-xs text-gray-500 font-medium">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
             </div>
             <button 
               type="button"
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                setSelectedFile(null); 
-                setStatus('idle'); 
-                setResultData(null);
-                if (inputRef.current) inputRef.current.value = ''; 
-              }} 
-              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+              onClick={(e) => { e.stopPropagation(); setSelectedFile(null); setStatus('idle'); setResultData(null); }} 
+              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
               <X size={20} />
             </button>
@@ -190,7 +181,6 @@ export default function Upload() {
             </div>
             
             <div className="flex flex-col md:flex-row items-center gap-3">
-              {/* Input Pencarian Khusus di Tabel Hasil */}
               <div className="relative w-full md:w-60">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search size={16} className="text-gray-400" />

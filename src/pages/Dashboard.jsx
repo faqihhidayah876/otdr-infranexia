@@ -18,9 +18,7 @@ export default function Dashboard() {
         const response = await getHistoryData();
         const data = response.data || [];
         
-        // Kelompokkan berdasarkan menit upload & ODC
         const uniqueUploads = new Set(data.map(item => item.created_at.substring(0, 16) + '_' + item.odc)).size;
-        
         const totalCore = data.length;
         const totalPutus = data.reduce((acc, curr) => acc + (curr.jumlah_titik_putus > 0 ? 1 : 0), 0);
         const totalBending = data.reduce((acc, curr) => acc + (curr.jumlah_bending || 0), 0);
@@ -38,12 +36,9 @@ export default function Dashboard() {
     fetchDashboardData();
   }, []);
 
-  // StatCard dengan desain baru (glassmorphism, vertikal, efek cahaya)
   const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }) => (
     <div className="bg-white/50 backdrop-blur-xl border border-white/60 p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(220,38,38,0.1)] hover:bg-white/70 relative overflow-hidden">
-      {/* Efek kilau cahaya di sudut */}
       <div className="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-white/40 to-transparent rounded-full blur-2xl"></div>
-      
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${colorClass}`}>
         <Icon size={24} />
       </div>
@@ -65,14 +60,13 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-4 md:p-8 pt-20 md:pt-8 max-w-7xl mx-auto animate-page">
-      <div className="mb-8">
+    <div className="animate-page space-y-6">
+      <div>
         <h2 className="text-2xl font-bold text-gray-800">Dashboard Utama</h2>
         <p className="text-gray-500 mt-1">Ringkasan performa jaringan fiber optik dari data OTDR.</p>
       </div>
 
-      {/* Grid Kartu Statistik - 5 kolom */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatCard 
           title="Total File Upload" 
           value={stats.totalFileUploads} 
@@ -110,7 +104,6 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Area Panduan Penggunaan Sistem (tetap) */}
       <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
         <h3 className="text-lg font-bold text-gray-800 mb-4">Panduan Penggunaan Sistem</h3>
         <ul className="list-disc list-inside space-y-2 text-gray-600 text-sm">
