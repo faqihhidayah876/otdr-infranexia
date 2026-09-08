@@ -13,21 +13,39 @@ export default function FloatingChatbot() {
   
   const messagesEndRef = useRef(null);
 
+  // Auto-scroll ke pesan terbaru
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatHistory, isOpen]);
 
-  const handleSendMessage = async () => {
-    if (!message.trim()) return;
+  // ─── 🔥 TAMBAHAN: Menangkap event dari tombol "Tanya AI" ───
+  useEffect(() => {
+    const handleTriggerChatbot = (event) => {
+      const messageFromUpload = event.detail;
+      if (messageFromUpload) {
+        console.log('Chatbot menerima pesan dari Upload:', messageFromUpload);
+        setIsOpen(true);                        // Buka chatbot
+        sendMessageContent(messageFromUpload);  // Kirim pesan otomatis
+      }
+    };
 
-    const userMsg = message;
-    setMessage('');
-    setChatHistory(prev => [...prev, { role: 'user', content: userMsg }]);
+    window.addEventListener('trigger-chatbot', handleTriggerChatbot);
+    return () => window.removeEventListener('trigger-chatbot', handleTriggerChatbot);
+  }, []); // Kosongkan dependency agar hanya berjalan sekali saat mount
+  // ──────────────────────────────────────────────────────────────
+
+  // Fungsi untuk mengirim pesan secara programatis (dipakai oleh event listener)
+  const sendMessageContent = async (content) => {
+    if (!content.trim()) return;
+
+    // Tambahkan pesan user ke history
+    setChatHistory(prev => [...prev, { role: 'user', content: content.trim() }]);
     setIsLoading(true);
 
     try {
+      // Ambil data history terbaru dari API
       const historyRes = await getHistoryData();
       const latestData = historyRes.data ? historyRes.data.slice(0, 5) : [];
 
@@ -56,7 +74,7 @@ export default function FloatingChatbot() {
           messages: [
             { role: 'system', content: systemPrompt },
             ...chatHistory.map(msg => ({ role: msg.role, content: msg.content })),
-            { role: 'user', content: userMsg }
+            { role: 'user', content: content.trim() }
           ],
           temperature: 0.3
         })
@@ -75,6 +93,14 @@ export default function FloatingChatbot() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Fungsi handle kirim dari input manual
+  const handleSendMessage = async () => {
+    if (!message.trim()) return;
+    const userMsg = message;
+    setMessage(''); // kosongkan input
+    await sendMessageContent(userMsg);
   };
 
   const handleKeyDown = (e) => {
@@ -107,12 +133,9 @@ export default function FloatingChatbot() {
                   ? 'bg-red-600 text-white rounded-tl-xl rounded-bl-xl rounded-br-xl' 
                   : 'bg-white border border-gray-100 text-gray-700 rounded-tr-xl rounded-bl-xl rounded-br-xl'
               } max-w-[85%] leading-relaxed overflow-wrap-anywhere`}>
-                
-                {/* INI KUNCI PERUBAHANNYA: Menggunakan ReactMarkdown */}
                 <div className="prose prose-sm prose-p:my-1 prose-ul:my-1 prose-li:my-0">
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
-
               </div>
             </div>
           ))}

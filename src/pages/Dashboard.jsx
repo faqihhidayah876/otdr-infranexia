@@ -1,117 +1,183 @@
-import { useState, useEffect } from 'react';
-import { Activity, FileText, AlertTriangle, TrendingDown, Loader2, GitCommit } from 'lucide-react';
+import { useState, useEffect, useContext } from 'react';
+import { FileSpreadsheet, Cable, AlertTriangle, TrendingDown } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getHistoryData } from '../utils/api';
+import { AppContext } from '../App'; // 1. IMPORT CONTEXT
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({
-    totalFileUploads: 0,
-    totalCore: 0,
-    totalPutus: 0,
-    totalBending: 0,
-    avgRxOnu: 0,
-  });
+  const { t, lang } = useContext(AppContext); // 2. PANGGIL FUNGSI t & lang
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ totalFiles: 0, totalCore: 0, totalPutus: 0, avgRxOnu: 0 });
+  const [trendData, setTrendData] = useState([]);
+  const [coreData, setCoreData] = useState([]);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const response = await getHistoryData();
-        const data = response.data || [];
-        
-        const uniqueUploads = new Set(data.map(item => item.created_at.substring(0, 16) + '_' + item.odc)).size;
-        const totalCore = data.length;
-        const totalPutus = data.reduce((acc, curr) => acc + (curr.jumlah_titik_putus > 0 ? 1 : 0), 0);
-        const totalBending = data.reduce((acc, curr) => acc + (curr.jumlah_bending || 0), 0);
-        const sumRx = data.reduce((acc, curr) => acc + (curr.estimasi_rx_onu || 0), 0);
-        const avgRxOnu = totalCore > 0 ? (sumRx / totalCore).toFixed(2) : 0;
+  useEffect(() => { fetchRealData(); }, [lang]); // Render ulang jika bahasa berubah (untuk tanggal grafik)
 
-        setStats({ totalFileUploads: uniqueUploads, totalCore, totalPutus, totalBending, avgRxOnu });
-      } catch (error) {
-        console.error("Gagal memuat data dashboard", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchRealData = async () => {
+    try {
+      setLoading(true);
+      const response = await getHistoryData();
+      const rawData = response.data || [];
 
-    fetchDashboardData();
-  }, []);
+      let totalCore = 0; let totalPutus = 0; let sumRx = 0;
+      const uniqueFiles = new Set(); 
+      rawData.forEach(item => {
+        uniqueFiles.add(`${item.created_at.substring(0, 16)}_${item.odc}`);
+      });
+      rawData.forEach(row => {
+        totalCore += 1;
+        if (row.jumlah_titik_putus > 0) totalPutus += 1;
+        sumRx += row.estimasi_rx_onu;
+      });
+      const avgRx = totalCore > 0 ? (sumRx / totalCore).toFixed(2) : 0;
+      setStats({ totalFiles: uniqueFiles.size, totalCore, totalPutus, avgRxOnu: avgRx });
 
-  const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }) => (
-    <div className="bg-white/50 backdrop-blur-xl border border-white/60 p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(220,38,38,0.1)] hover:bg-white/70 relative overflow-hidden">
-      <div className="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-white/40 to-transparent rounded-full blur-2xl"></div>
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${colorClass}`}>
-        <Icon size={24} />
-      </div>
-      <div className="relative z-10">
-        <h4 className="text-3xl font-extrabold text-gray-800 tracking-tight">{value}</h4>
-        <p className="text-sm text-gray-500 font-medium mt-1">{title}</p>
-        {subtitle && <p className="text-xs text-gray-400 mt-2 font-medium">{subtitle}</p>}
-      </div>
-    </div>
-  );
+      const rxByDate = {};
+      rawData.forEach(row => {
+        const dateStr = row.created_at.substring(0, 10);
+        if (!rxByDate[dateStr]) rxByDate[dateStr] = { sum: 0, count: 0 };
+        rxByDate[dateStr].sum += row.estimasi_rx_onu;
+        rxByDate[dateStr].count += 1;
+      });
+
+      const trendArray = Object.keys(rxByDate)
+        .sort((a, b) => new Date(a) - new Date(b)).slice(-7)
+        .map(date => ({
+          // Format tanggal disesuaikan dengan bahasa yang dipilih
+          name: new Date(date).toLocaleString(lang === 'id' ? 'id-ID' : 'en-US', { day: '2-digit', month: 'short' }),
+          rx_onu: Number((rxByDate[date].sum / rxByDate[date].count).toFixed(2))
+        }));
+      setTrendData(trendArray);
+
+      const coreByOdc = {};
+      rawData.forEach(row => {
+        const odc = row.odc || "UNKNOWN";
+        if (!coreByOdc[odc]) coreByOdc[odc] = { normal: 0, putus: 0 };
+        if (row.jumlah_titik_putus > 0) coreByOdc[odc].putus += 1;
+        else coreByOdc[odc].normal += 1;
+      });
+      const coreArray = Object.keys(coreByOdc)
+        .map(odc => ({
+          name: odc.length > 8 ? odc.substring(0, 8) + ".." : odc,
+          normal: coreByOdc[odc].normal,
+          putus: coreByOdc[odc].putus,
+          total: coreByOdc[odc].normal + coreByOdc[odc].putus
+        })).sort((a, b) => b.total - a.total).slice(0, 5);
+      setCoreData(coreArray);
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-gray-500">
-        <Loader2 className="animate-spin mb-4" size={40} />
-        <p>Menyiapkan Dashboard Infranexia...</p>
+      <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400 pt-32 transition-colors">
+        <p className="font-semibold text-lg animate-pulse">{t('Memuat visualisasi data...', 'Loading data visualization...')}</p>
       </div>
     );
   }
 
   return (
-    <div className="animate-page space-y-6">
+    <div className="animate-page space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-gray-800">Dashboard Utama</h2>
-        <p className="text-gray-500 mt-1">Ringkasan performa jaringan fiber optik dari data OTDR.</p>
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight transition-colors">
+          {t('Dashboard Utama', 'Main Dashboard')}
+        </h2>
+        <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm sm:text-base transition-colors">
+          {t('Ringkasan performa dan telemetri jaringan fiber optik dari data OTDR.', 'Performance summary and telemetry of fiber optic networks from OTDR data.')}
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <StatCard 
-          title="Total File Upload" 
-          value={stats.totalFileUploads} 
-          icon={FileText} 
-          colorClass="bg-blue-100 text-blue-600"
-          subtitle="File Excel diproses"
-        />
-        <StatCard 
-          title="Total Data Core" 
-          value={stats.totalCore} 
-          icon={GitCommit} 
-          colorClass="bg-purple-100 text-purple-600"
-          subtitle="Baris fiber dianalisa"
-        />
-        <StatCard 
-          title="Core Putus" 
-          value={stats.totalPutus} 
-          icon={AlertTriangle} 
-          colorClass="bg-red-100 text-red-600"
-          subtitle="Titik EOF terdeteksi"
-        />
-        <StatCard 
-          title="Total Bending" 
-          value={stats.totalBending} 
-          icon={TrendingDown} 
-          colorClass="bg-yellow-100 text-yellow-600"
-          subtitle="Event redaman tinggi"
-        />
-        <StatCard 
-          title="Rata-rata RX ONU" 
-          value={`${stats.avgRxOnu} dBm`} 
-          icon={Activity} 
-          colorClass="bg-green-100 text-green-600"
-          subtitle="Kualitas daya terima"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {/* KARTU 1 */}
+        <div className="bg-white dark:bg-[#1A2332] border border-gray-100 dark:border-gray-800 p-6 rounded-3xl shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-50 dark:bg-blue-900/20 rounded-full group-hover:scale-110 transition-transform duration-500"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mb-4"><FileSpreadsheet size={24} /></div>
+            <h3 className="text-3xl font-black text-gray-900 dark:text-white transition-colors">{stats.totalFiles}</h3>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">{t('Total File Upload', 'Total Files Uploaded')}</p>
+          </div>
+        </div>
+        {/* KARTU 2 */}
+        <div className="bg-white dark:bg-[#1A2332] border border-gray-100 dark:border-gray-800 p-6 rounded-3xl shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-50 dark:bg-indigo-900/20 rounded-full group-hover:scale-110 transition-transform duration-500"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center mb-4"><Cable size={24} /></div>
+            <h3 className="text-3xl font-black text-gray-900 dark:text-white transition-colors">{stats.totalCore}</h3>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">{t('Total Data Core', 'Total Core Data')}</p>
+          </div>
+        </div>
+        {/* KARTU 3 */}
+        <div className="bg-white dark:bg-[#1A2332] border border-gray-100 dark:border-gray-800 p-6 rounded-3xl shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-red-50 dark:bg-red-900/20 rounded-full group-hover:scale-110 transition-transform duration-500"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-2xl flex items-center justify-center mb-4"><AlertTriangle size={24} /></div>
+            <h3 className="text-3xl font-black text-red-600 dark:text-red-500 transition-colors">{stats.totalPutus}</h3>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">{t('Total Titik Putus', 'Total Broken Cores')}</p>
+          </div>
+        </div>
+        {/* KARTU 4 */}
+        <div className="bg-white dark:bg-[#1A2332] border border-gray-100 dark:border-gray-800 p-6 rounded-3xl shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-green-50 dark:bg-green-900/20 rounded-full group-hover:scale-110 transition-transform duration-500"></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-2xl flex items-center justify-center mb-4"><TrendingDown size={24} /></div>
+            <h3 className="text-3xl font-black text-gray-900 dark:text-white transition-colors">{stats.avgRxOnu} <span className="text-lg font-bold text-gray-400 dark:text-gray-500">dBm</span></h3>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">{t('Rata-rata RX ONU', 'Average RX ONU')}</p>
+          </div>
+        </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Panduan Penggunaan Sistem</h3>
-        <ul className="list-disc list-inside space-y-2 text-gray-600 text-sm">
-          <li>Pilih menu <strong>Upload Data</strong> untuk mengubah file Excel mentah dari alat ukur OTDR menjadi format laporan Infranexia.</li>
-          <li>Sistem secara otomatis akan mendeteksi titik putus (End of Fiber) dan event bending.</li>
-          <li>Klik tombol <strong>Simpan Laporan (Excel)</strong> setelah kalkulasi selesai untuk mengunduh rekapitulasi data.</li>
-          <li>Semua riwayat pengujian tersimpan secara otomatis dan dapat dipantau di menu <strong>History</strong>.</li>
-        </ul>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
+        {/* GRAFIK 1 */}
+        <div className="bg-white dark:bg-[#1A2332] border border-gray-100 dark:border-gray-800 p-6 rounded-3xl shadow-sm transition-colors">
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('Tren Rata-rata RX ONU', 'RX ONU Average Trend')}</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{t('Pergerakan kualitas sinyal dari waktu ke waktu', 'Signal quality movement over time')}</p>
+          </div>
+          <div className="h-72 w-full">
+            {trendData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trendData} margin={{ top: 5, right: 20, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" opacity={0.2} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', backgroundColor: 'var(--tw-colors-gray-800)' }} labelStyle={{ fontWeight: 'bold' }} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }} />
+                  <Line type="monotone" name="RX ONU (dBm)" dataKey="rx_onu" stroke="#ef4444" strokeWidth={3} dot={{ r: 4, fill: '#ef4444', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0, fill: '#dc2626' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm font-medium">{t('Data tren belum tersedia.', 'Trend data not available yet.')}</div>
+            )}
+          </div>
+        </div>
+
+        {/* GRAFIK 2 */}
+        <div className="bg-white dark:bg-[#1A2332] border border-gray-100 dark:border-gray-800 p-6 rounded-3xl shadow-sm transition-colors">
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('Distribusi Status Core per ODC', 'Core Status Distribution per ODC')}</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{t('5 Lokasi ODC dengan jumlah pengerjaan terbanyak', 'Top 5 ODC locations by workload')}</p>
+          </div>
+          <div className="h-72 w-full">
+            {coreData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={coreData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }} barSize={16}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" opacity={0.2} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+                  <Tooltip cursor={{fill: '#f8fafc', opacity: 0.1}} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }} />
+                  <Bar dataKey="normal" name={t('Core Normal', 'Normal Core')} fill="#3b82f6" radius={[4, 4, 4, 4]} />
+                  <Bar dataKey="putus" name={t('Core Putus', 'Broken Core')} fill="#ef4444" radius={[4, 4, 4, 4]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+               <div className="h-full flex items-center justify-center text-gray-400 text-sm font-medium">{t('Data lokasi belum tersedia.', 'Location data not available yet.')}</div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
