@@ -21,10 +21,8 @@ const PageNavigation = () => {
 
   return (
     <div className="mb-6 sm:mb-8 animate-page mt-2">
-      
       {/* BARIS 1: Tombol Back (Kiri) & Switchers (Kanan) */}
       <div className="flex items-center justify-between gap-4 mb-4">
-        
         {/* Sisi Kiri: Tombol Back (Hanya muncul jika bukan di Dashboard) */}
         <div>
           {pathNames.length > 0 && (
@@ -40,7 +38,7 @@ const PageNavigation = () => {
 
         {/* Sisi Kanan: Switcher Bahasa & Tema */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <button 
+          <button
             onClick={() => setLang(lang === 'id' ? 'en' : 'id')}
             className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-[#1A2332] border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-all text-sm font-bold shadow-sm"
           >
@@ -48,7 +46,7 @@ const PageNavigation = () => {
             {lang === 'id' ? 'ID' : 'EN'}
           </button>
 
-          <button 
+          <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="p-2 bg-white dark:bg-[#1A2332] border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-all shadow-sm"
             title={t('Ubah Tema', 'Toggle Theme')}
@@ -68,7 +66,7 @@ const PageNavigation = () => {
         {pathNames.map((value, index) => {
           const to = `/${pathNames.slice(0, index + 1).join('/')}`;
           const isLast = index === pathNames.length - 1;
-          
+
           let title = value.charAt(0).toUpperCase() + value.slice(1);
           if (value === 'upload') title = t('Upload Data', 'Upload Data');
           if (value === 'history') title = t('Riwayat Kalkulasi', 'Calculation History');
@@ -92,7 +90,8 @@ const PageNavigation = () => {
 
 // === KOMPONEN PELINDUNG HALAMAN (LAYOUT UTAMA) ===
 const ProtectedRoute = ({ children }) => {
-  const isAuthenticated = localStorage.getItem('isLoggedIn') === 'true';
+  // Pengecekan token asli Sanctum, bukan flag isLoggedIn
+  const isAuthenticated = Boolean(localStorage.getItem('token'));
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
   return (
@@ -100,12 +99,11 @@ const ProtectedRoute = ({ children }) => {
       <Sidebar />
 
       <main className="flex-1 relative flex flex-col overflow-hidden">
-        
         {/* MOBILE TOP HEADER (Perbaikan Logo Dark Mode) */}
         <div className="md:hidden h-16 bg-white/90 dark:bg-[#0B1120]/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 flex items-center justify-center sticky top-0 z-30 shadow-sm shrink-0 transition-colors">
-           <div className="dark:bg-white/95 dark:px-3 dark:py-1.5 dark:rounded-xl dark:shadow-[0_0_15px_rgba(255,255,255,0.05)] transition-all flex items-center justify-center">
-             <img src="https://i.ibb.co.com/pjrL2fjV/logo-infranexia.png" alt="Infranexia" className="h-6 object-contain transition-all" />
-           </div>
+          <div className="dark:bg-white/95 dark:px-3 dark:py-1.5 dark:rounded-xl dark:shadow-[0_0_15px_rgba(255,255,255,0.05)] transition-all flex items-center justify-center">
+            <img src="https://i.ibb.co.com/pjrL2fjV/logo-infranexia.png" alt="Infranexia" className="h-6 object-contain transition-all" />
+          </div>
         </div>
 
         {/* AREA KONTEN UTAMA */}

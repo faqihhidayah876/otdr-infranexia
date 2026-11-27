@@ -1,31 +1,69 @@
 import axios from 'axios';
 
-// Default fallback menggunakan backend production Alwaysdata jika VITE_API_URL belum di-set di Vercel
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://theresa-2sid.alwaysdata.net/api';
-
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
     'Accept': 'application/json',
   },
 });
+
+// 1. Otomatis tempelkan Bearer Token di setiap request
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// 2. Otomatis tendang ke /login jika server membalas 401 (Unauthorized)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && window.location.pathname !== '/login') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('isLoggedIn');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const loginUser = async (email, password) => {
+  try {
+    const response = await api.post('/login', { email, password });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || 'Email atau kata sandi salah.';
+  }
+};
+
+export const logoutUser = async () => {
+  try {
+    const response = await api.post('/logout');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || 'Gagal logout dari server.';
+  }
+};
 
 export const uploadOtdrFile = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
 
   try {
-    // Biarkan Axios mengatur header Content-Type beserta boundary multipart secara otomatis
-    const response = await api.post('/upload', formData);
+    const response = await api.post('/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   } catch (error) {
-    console.error("Detail uploadOtdrFile error:", error);
-    const serverMessage = 
-      error.response?.data?.errors?.file?.[0] || 
-      error.response?.data?.message || 
-      error.message || 
-      'Terjadi kesalahan saat menghubungi server.';
-    throw serverMessage;
+    throw error.response?.data?.message || 'Terjadi kesalahan saat menghubungi server.';
   }
 };
 
@@ -34,9 +72,7 @@ export const getHistoryData = async () => {
     const response = await api.get('/history');
     return response.data;
   } catch (error) {
-    console.error("Detail getHistoryData error:", error);
-    const serverMessage = error.response?.data?.message || error.message || 'Gagal mengambil data riwayat.';
-    throw serverMessage;
+    throw error.response?.data?.message || 'Gagal mengambil data riwayat.';
   }
 };
 
