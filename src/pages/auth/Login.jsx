@@ -77,7 +77,7 @@ export default function Login() {
         {/* Logo */}
         <div className="mb-10 mt-4">
           <img
-            src="https://i.ibb.co.com/pjrL2fjV/logo-infranexia.png"
+            src="https://i.ibb.co.com/q3RGJJpP/logo-infranexia.png"
             alt="Infranexia Logo"
             className="h-10 object-contain"
           />

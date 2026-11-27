@@ -94,7 +94,7 @@ export default function Sidebar() {
         <div className="px-8 py-8 border-b border-gray-200/50 dark:border-gray-700/50 flex justify-center mt-12 md:mt-0 shrink-0">
           <div className="dark:bg-white/95 dark:px-4 dark:py-1.5 dark:rounded-2xl dark:shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-all">
             <img
-              src="https://i.ibb.co.com/pjrL2fjV/logo-infranexia.png"
+              src="https://i.ibb.co.com/q3RGJJpP/logo-infranexia.png"
               alt="Infranexia Logo"
               className="h-12 w-auto object-contain drop-shadow-sm transition-all"
             />

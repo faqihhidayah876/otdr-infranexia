@@ -102,7 +102,7 @@ const ProtectedRoute = ({ children }) => {
         {/* MOBILE TOP HEADER (Perbaikan Logo Dark Mode) */}
         <div className="md:hidden h-16 bg-white/90 dark:bg-[#0B1120]/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 flex items-center justify-center sticky top-0 z-30 shadow-sm shrink-0 transition-colors">
           <div className="dark:bg-white/95 dark:px-3 dark:py-1.5 dark:rounded-xl dark:shadow-[0_0_15px_rgba(255,255,255,0.05)] transition-all flex items-center justify-center">
-            <img src="https://i.ibb.co.com/pjrL2fjV/logo-infranexia.png" alt="Infranexia" className="h-6 object-contain transition-all" />
+            <img src="https://i.ibb.co.com/q3RGJJpP/logo-infranexia.png" alt="Infranexia" className="h-6 object-contain transition-all" />
           </div>
         </div>
 
