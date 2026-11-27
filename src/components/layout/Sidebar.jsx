@@ -96,7 +96,7 @@ export default function Sidebar() {
             <img
               src="https://i.ibb.co.com/q3RGJJpP/logo-infranexia.png"
               alt="Infranexia Logo"
-              className="h-12 w-auto object-contain drop-shadow-sm transition-all"
+              className="h-16 w-auto object-contain drop-shadow-sm transition-all"
             />
           </div>
         </div>

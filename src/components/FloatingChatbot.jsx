@@ -59,37 +59,36 @@ export default function FloatingChatbot() {
       3. Jika ditanya soal data yang tidak ada di konteks, katakan kamu hanya bisa melihat data terbaru.
       4. Gunakan markdown (bold, bullet points) agar jawaban mudah dibaca.`;
 
-      const apiUrl = import.meta.env.VITE_MISTRAL_ENDPOINT;
-      const aiModel = import.meta.env.VITE_AI_MODEL;
-      const apiKey = import.meta.env.VITE_MISTRAL_API_KEY;
-
-      const response = await fetch(apiUrl, {
+      // --- PERUBAHAN DI SINI ---
+      // Memanggil API Proxy Vercel kita, bukan langsung ke Groq/Mistral
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: aiModel,
           messages: [
             { role: 'system', content: systemPrompt },
             ...chatHistory.map(msg => ({ role: msg.role, content: msg.content })),
             { role: 'user', content: content.trim() }
-          ],
-          temperature: 0.3
+          ]
         })
       });
 
       const data = await response.json();
       
+      // Format respons Groq/OpenAI standar
       if (data.choices && data.choices.length > 0) {
         setChatHistory(prev => [...prev, { role: 'assistant', content: data.choices[0].message.content }]);
       } else {
-        throw new Error("Invalid response from Mistral");
+        throw new Error(data.error || "Invalid response from AI Server");
       }
     } catch (error) {
       console.error("AI Error:", error);
-      setChatHistory(prev => [...prev, { role: 'assistant', content: 'Maaf, saya sedang mengalami gangguan koneksi ke server AI Mistral. Pastikan API Key dan Endpoint valid.' }]);
+      setChatHistory(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'Maaf, SAHAJA AI sedang mengalami gangguan koneksi ke server. Silakan coba beberapa saat lagi.' 
+      }]);
     } finally {
       setIsLoading(false);
     }
